@@ -3,7 +3,7 @@ import Router from "koa-router";
 import cors from "koa-cors";
 import ytdl from "ytdl-core";
 import fs from "fs";
-import path from "path";
+import ffmpeg from "fluent-ffmpeg";
 const app = new Koa();
 const router = new Router();
 
@@ -17,12 +17,17 @@ router.get("/download", async (ctx) => {
     return;
   }
   function extractVideoId(url) {
-    const regex = /^.*(youtu.be\/|youtube(-nocookie)?.com\/(v\/|.*u\/\w\/|embed\/|.*v=))([\w-]{11}).*/;
-    const match = url.match(regex);
-    return match ? match[4] : null;
-}
-
+    var regExp =
+      /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+    var match = url.match(regExp);
+    if (match && match[2].length == 11) {
+      return match[2];
+    }
+    return null;
+  }
+  console.log("Url", URL);
   const videoId = extractVideoId(URL);
+  console.log("video ID", videoId);
   if (!videoId) {
     ctx.status = 400;
     ctx.body = "Invalid YouTube URL";
@@ -30,23 +35,26 @@ router.get("/download", async (ctx) => {
   }
 
   try {
-    // Fetch video info using the extracted videoId
-    const info = await ytdl.getInfo(videoId);
-    const title = info.videoDetails.title.replace(/[^\w\s]/gi, ""); // Sanitize title
-    const filename = `${title}.mp4`;
-    const filePath = path.join(__dirname, filename);
+    const videoUrl = `https://www.youtube.com/watch?v=${videoId}`;
+    const title = (await ytdl.getInfo(videoUrl)).videoDetails.title;
+    const outputPath = `./output/${title}.mp4`;
 
-    // Create a write stream
-    const writeStream = fs.createWriteStream(filePath);
+    // Create output directory if it doesn't exist
+    if (!fs.existsSync("./output")) {
+      fs.mkdirSync("./output");
+    }
 
-    // Stream the video to a file
-    ytdl(`https://www.youtube.com/watch?v=${videoId}`, { format: "mp4" }).pipe(
-      writeStream
-    );
+    // Download video
+    ytdl(videoUrl, { quality: "highest" })
+      .pipe(fs.createWriteStream(outputPath))
+      .on("finish", () => {
+        console.log("Download completed.");
+      });
 
     ctx.status = 200;
-    ctx.body = `Video downloaded and saved as ${filename}`;
+    ctx.body = `Video downloaded and saved`;
   } catch (error) {
+    console.log(error);
     ctx.status = 500;
     ctx.body = "Error downloading video";
   }

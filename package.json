@@ -4,6 +4,7 @@
   "description": "",
   "main": "index.js",
   "dependencies": {
+    "fluent-ffmpeg": "^2.1.2",
     "koa": "^2.15.0",
     "koa-cors": "^0.0.16",
     "koa-router": "^12.0.1",
@@ -11,10 +12,10 @@
     "ytdl-core": "^4.11.5"
   },
   "devDependencies": {},
-  "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
+  "type": "module",
   "keywords": [],
   "author": "",
   "license": "ISC"
