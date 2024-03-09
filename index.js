@@ -4,6 +4,7 @@ import cors from "koa-cors";
 import ytdl from "ytdl-core";
 import fs from "fs";
 import ffmpeg from "fluent-ffmpeg";
+import { CLIENT_RENEG_LIMIT } from "tls";
 const app = new Koa();
 const router = new Router();
 
@@ -15,16 +16,22 @@ router.get("/download", async (ctx) => {
     ctx.status = 400;
     ctx.body = "Missing URL parameter";
     return;
-  }
-  function extractVideoId(url) {
-    var regExp =
-      /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
-    var match = url.match(regExp);
-    if (match && match[2].length == 11) {
-      return match[2];
+  }function extractVideoId(url) {
+    var regExpRegularVideo =
+        /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+    var regExpShortsVideo =
+        /^.*(youtu.be\/shorts\/|youtube.com\/shorts\/)([^#\&\?]*).*/;
+    var matchRegular = url.match(regExpRegularVideo);
+    var matchShorts = url.match(regExpShortsVideo);
+
+    if (matchRegular && matchRegular[2].length == 11) {
+        return matchRegular[2];
+    } else if (matchShorts && matchShorts[2].length == 11) {
+        return matchShorts[2];
     }
     return null;
-  }
+}
+
   console.log("Url", URL);
   const videoId = extractVideoId(URL);
   console.log("video ID", videoId);
